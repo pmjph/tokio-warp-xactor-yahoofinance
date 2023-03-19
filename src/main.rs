@@ -1,8 +1,10 @@
-use async_std::prelude::*;
-use async_std::stream;
+//use async_std::prelude::*;
+///use async_std::stream;
+use tokio::time::{sleep, Duration};
+use tokio_stream::wrappers::IntervalStream;
 use chrono::prelude::*;
 use clap::Parser;
-use std::time::Duration;
+//use std::time::Duration;
 use xactor::*;
 use yahoo_finance_api as yahoo;
 use std::fs::File;
@@ -237,10 +239,30 @@ async fn main() -> Result<()> {
         writer: None,
     })
     .await;
-
+    
     // CSV header
     println!("period start,symbol,price,change %,min,max,30d avg");
-    let mut interval = stream::interval(Duration::from_secs(30));
+    //let mut interval = stream::interval(Duration::from_secs(30));
+    //let interval = tokio::time::interval(Duration::from_secs(1));
+    //let mut interval = IntervalStream::new(interval).take(30);
+    let now = Utc::now();
+    //let mut interval = time::interval(time::Duration::from_secs(2));
+    for _i in 0..5 {
+        sleep(Duration::from_millis(30000)).await;
+        println!("30000 ms have elapsed");
+        let now = Utc::now(); // Period end for this fetch
+        for symbol in &symbols {
+            if let Err(e) = Broker::from_registry().await?.publish(QuoteRequest {
+                symbol: symbol.clone(),
+                from,
+                to: now,
+            }) {
+                eprint!("{}", e);
+                //break 'outer;
+            }
+        }
+    }
+    /**
     'outer: while interval.next().await.is_some() {
         let now = Utc::now(); // Period end for this fetch
         for symbol in &symbols {
@@ -254,5 +276,6 @@ async fn main() -> Result<()> {
             }
         }
     }
+    **/
     Ok(())
 }
