@@ -1,10 +1,7 @@
-//use async_std::prelude::*;
-///use async_std::stream;
+
 use tokio::time::{sleep, Duration};
-use tokio_stream::wrappers::IntervalStream;
 use chrono::prelude::*;
 use clap::Parser;
-//use std::time::Duration;
 use xactor::*;
 use yahoo_finance_api as yahoo;
 use std::fs::File;
@@ -181,6 +178,26 @@ pub struct FileSink {
 }
 
 #[async_trait::async_trait]
+impl Handler<PerformanceIndicators> for FileSink {
+    async fn handle(&mut self, _ctx: &mut Context<Self>, msg: PerformanceIndicators) {
+        if let Some(file) = &mut self.writer {
+            let _ = writeln!(
+                file,
+                "{},{},${:.2},{:.2}%,${:.2},${:.2},${:.2}",
+                msg.timestamp.to_rfc3339(),
+                msg.symbol,
+                msg.price,
+                msg.pct_change * 100.0,
+                msg.period_min,
+                msg.period_max,
+                msg.last_sma
+            );
+        }
+    }
+}
+
+
+#[async_trait::async_trait]
 impl Actor for FileSink {
     async fn started(&mut self, ctx: &mut Context<Self>) -> Result<()> {
         let mut file = File::create(&self.filename)
@@ -203,24 +220,6 @@ impl Actor for FileSink {
     }
 }
 
-#[async_trait::async_trait]
-impl Handler<PerformanceIndicators> for FileSink {
-    async fn handle(&mut self, _ctx: &mut Context<Self>, msg: PerformanceIndicators) {
-        if let Some(file) = &mut self.writer {
-            let _ = writeln!(
-                file,
-                "{},{},${:.2},{:.2}%,${:.2},${:.2},${:.2}",
-                msg.timestamp.to_rfc3339(),
-                msg.symbol,
-                msg.price,
-                msg.pct_change * 100.0,
-                msg.period_min,
-                msg.period_max,
-                msg.last_sma
-            );
-        }
-    }
-}
 
 ///
 /// Main!
@@ -245,25 +244,11 @@ async fn main() -> Result<()> {
     //let mut interval = stream::interval(Duration::from_secs(30));
     //let interval = tokio::time::interval(Duration::from_secs(1));
     //let mut interval = IntervalStream::new(interval).take(30);
-    let now = Utc::now();
+    //let now = Utc::now();
     //let mut interval = time::interval(time::Duration::from_secs(2));
-    for _i in 0..5 {
+    'outer: loop {
         sleep(Duration::from_millis(30000)).await;
         println!("30000 ms have elapsed");
-        let now = Utc::now(); // Period end for this fetch
-        for symbol in &symbols {
-            if let Err(e) = Broker::from_registry().await?.publish(QuoteRequest {
-                symbol: symbol.clone(),
-                from,
-                to: now,
-            }) {
-                eprint!("{}", e);
-                //break 'outer;
-            }
-        }
-    }
-    /**
-    'outer: while interval.next().await.is_some() {
         let now = Utc::now(); // Period end for this fetch
         for symbol in &symbols {
             if let Err(e) = Broker::from_registry().await?.publish(QuoteRequest {
@@ -276,6 +261,5 @@ async fn main() -> Result<()> {
             }
         }
     }
-    **/
     Ok(())
 }
