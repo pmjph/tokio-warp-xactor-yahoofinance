@@ -116,7 +116,7 @@ mod tests {
     #![allow(non_snake_case)]
     use super::*;
 
-    #[async_std::test]
+    #[tokio::test]
     async fn test_PriceDifference_calculate() {
         let signal = PriceDifference {};
         assert_eq!(signal.calculate(&[]).await, None);
@@ -134,7 +134,7 @@ mod tests {
         );
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn test_MinPrice_calculate() {
         let signal = MinPrice {};
         assert_eq!(signal.calculate(&[]).await, None);
@@ -152,7 +152,7 @@ mod tests {
         );
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn test_MaxPrice_calculate() {
         let signal = MaxPrice {};
         assert_eq!(signal.calculate(&[]).await, None);
@@ -170,7 +170,7 @@ mod tests {
         );
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn test_WindowedSMA_calculate() {
         let series = vec![2.0, 4.5, 5.3, 6.5, 4.7];
 
